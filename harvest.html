@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harvest — Meal Planner</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FAFAF9;--bg2:#F2F0EC;--bg3:#E8E5DF;
+  --text:#1C1C1A;--text2:#6B6862;--text3:#9E9A94;
+  --border:#E0DDD8;--border2:#C8C4BE;
+  --green:#3D6B4F;--green-bg:#EDF3EF;--green-text:#2A5039;
+  --amber-bg:#FDF3E3;--amber-text:#8B5E1A;
+  --red-bg:#FDECEA;--red-text:#8B2A2A;
+  --blue-bg:#EAF1FD;--blue-text:#1A4A8B;
+  --success:#2A7A4A;--warning:#B06000;--danger:#A03030;
+  --radius:8px;--radius-lg:12px;--radius-xl:16px;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1A1A18;--bg2:#232320;--bg3:#2C2C28;
+    --text:#F0EDE8;--text2:#A8A49E;--text3:#6B6862;
+    --border:#3A3834;--border2:#4A4844;
+    --green:#5A9A6F;--green-bg:#1A3025;--green-text:#7BC090;
+    --amber-bg:#2A2010;--amber-text:#D4A050;
+    --red-bg:#2A1010;--red-text:#D47070;
+    --blue-bg:#101828;--blue-text:#7098D0;
+    --success:#5A9A6F;--warning:#D4A050;--danger:#D47070;
+  }
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.5;min-height:100vh}
+#app{max-width:760px;margin:0 auto;padding:2rem 1.5rem}
+@media(max-width:600px){#app{padding:1.25rem 1rem}}
+button{font-family:inherit;cursor:pointer}
+input{font-family:inherit;font-size:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);width:100%;outline:none;transition:border-color 0.15s}
+input:focus{border-color:var(--green)}
+input::placeholder{color:var(--text3)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp 0.3s ease forwards}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px 5px 12px;background:var(--bg3);border-radius:100px;font-size:13px}
+.pill{display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:500}
+.pill-green{background:var(--green-bg);color:var(--green-text)}
+.pill-amber{background:var(--amber-bg);color:var(--amber-text)}
+.pill-red{background:var(--red-bg);color:var(--red-text)}
+.btn{border:1px solid var(--border2);border-radius:var(--radius);padding:8px 16px;font-size:13px;background:transparent;color:var(--text);transition:all 0.15s}
+.btn:hover{background:var(--bg3);border-color:var(--green)}
+.btn-primary{background:var(--text);color:var(--bg);border-color:var(--text);font-size:15px;font-weight:500;border-radius:var(--radius-lg);padding:13px;width:100%;transition:opacity 0.15s}
+.btn-primary:hover{opacity:0.88}
+.btn-primary:disabled{opacity:0.3;cursor:not-allowed}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.tabs{display:flex;gap:4px}
+.tab-btn{padding:6px 14px;border-radius:var(--radius);font-size:13px;border:none;background:transparent;color:var(--text2);transition:all 0.15s}
+.tab-btn.active{background:var(--bg3);color:var(--text);font-weight:500}
+.tab-btn:hover:not(.active){color:var(--text)}
+.section-head{margin-bottom:1.5rem}
+.section-head h1{font-size:22px;font-weight:500;margin-bottom:4px}
+.section-head p{font-size:14px;color:var(--text2)}
+.ghost-btn{background:none;border:none;color:var(--text2);font-size:13px;padding:2px 0;text-decoration:underline;text-underline-offset:2px}
+.ghost-btn:hover{color:var(--text)}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-xl);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all 0.15s}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--green);background:var(--green-bg)}
+.disambiguation-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px}
+.option-chip{padding:6px 13px;border-radius:100px;font-size:13px;border:1px solid var(--border2);background:transparent;color:var(--text);transition:all 0.12s}
+.option-chip.selected{border:1.5px solid var(--green);background:var(--green-bg);color:var(--green-text)}
+.option-chip:hover:not(.selected){border-color:var(--green)}
+.meal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.meal-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;display:flex;flex-direction:column;gap:10px}
+.meal-footer{display:flex;gap:8px;font-size:12px;color:var(--text3);padding-top:8px;border-top:1px solid var(--border)}
+.grocery-section{margin-top:2rem}
+.grocery-list{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0 16px}
+.grocery-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.grocery-row:last-child{border-bottom:none}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;z-index:100;overflow-y:auto}
+.modal{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-xl);padding:2rem;max-width:600px;width:100%;margin:auto}
+.modal h2{font-size:20px;font-weight:500;margin-bottom:8px}
+.recipe-steps{display:flex;flex-direction:column;gap:12px;margin-top:1rem}
+.recipe-step{display:flex;gap:12px;align-items:flex-start}
+.step-num{min-width:26px;height:26px;background:var(--bg3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;margin-top:1px}
+.recipe-step p{font-size:14px;line-height:1.6;color:var(--text)}
+.api-key-section{margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+.api-key-section h3{font-size:15px;font-weight:500;margin-bottom:4px}
+.api-key-section p{font-size:13px;color:var(--text2);margin-bottom:10px}
+.key-row{display:flex;gap:8px}
+.key-input{flex:1;font-family:monospace;font-size:12px;letter-spacing:0.05em}
+.notice{font-size:12px;color:var(--text3);margin-top:6px;line-height:1.5}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const DEFAULT_PANTRY=["olive oil","butter","eggs","garlic","onions","soy sauce","fish sauce","dijon mustard","honey","white wine vinegar","apple cider vinegar","all-purpose flour","rice","pasta","panko breadcrumbs","canned tomatoes","tomato paste","vegetable broth","canned chickpeas","canned white beans","canned coconut milk","lentils","parmesan","feta","heavy cream","greek yogurt","salt","black pepper","cumin","smoked paprika","chili flakes","dried oregano","dried thyme","bay leaves","cinnamon","sesame oil","sesame seeds","lemons","sugar"];
+
+let state={
+  tab:"planner",stage:"idle",
+  items:[],meals:[],grocery:[],
+  pantry:[...DEFAULT_PANTRY],
+  apiKey:"",
+  error:null,updatingMeals:false,
+  modal:{open:false,meal:null,recipe:null,loading:false}
+};
+
+// ── Storage ──
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function load(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+function savePantry(){save("harvest-pantry",state.pantry)}
+function loadAll(){
+  const p=load("harvest-pantry");if(p)state.pantry=p;
+  const k=load("harvest-api-key");if(k)state.apiKey=k;
+}
+
+// ── State ──
+function setState(patch,skipRender){Object.assign(state,patch);if(!skipRender)render()}
+function setModal(patch){Object.assign(state.modal,patch);render()}
+
+// ── Element builder ──
+function el(tag,props,...children){
+  const e=document.createElement(tag);
+  for(const[k,v]of Object.entries(props||{})){
+    if(k.startsWith("on")&&typeof v==="function")e.addEventListener(k.slice(2).toLowerCase(),v);
+    else if(k==="style"&&typeof v==="object")Object.assign(e.style,v);
+    else if(k==="class")e.className=v;
+    else if(k==="checked"){e.checked=!!v}
+    else if(k==="disabled"){e.disabled=!!v}
+    else if(v!==null&&v!==undefined&&v!==false)e.setAttribute(k,v===true?"":String(v));
+  }
+  for(const c of children.flat(Infinity)){
+    if(c==null||c===false)continue;
+    e.append(typeof c==="string"||typeof c==="number"?String(c):c);
+  }
+  return e;
+}
+
+function buildGroceryList(meals){
+  const map=new Map();
+  for(const m of meals)for(const n of(m.additionalNeeds||[])){
+    const k=n.toLowerCase().trim();
+    if(map.has(k))map.get(k).forMeals.push(m.name);
+    else map.set(k,{name:n,forMeals:[m.name],status:"need",replacement:""});
+  }
+  return[...map.values()];
+}
+
+// ── API ──
+function apiHeaders(){
+  return{"Content-Type":"application/json","x-api-key":state.apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"};
+}
+
+async function apiExtract(b64,mediaType){
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),body:JSON.stringify({
+    model:"claude-sonnet-4-20250514",max_tokens:1000,
+    messages:[{role:"user",content:[
+      {type:"image",source:{type:"base64",media_type:mediaType,data:b64}},
+      {type:"text",text:`Extract all produce and food items from this food box contents list. Include quantities.
+Return ONLY a JSON array. No markdown. No extra text.
+Schema: [{"name":str,"quantity":str,"ambiguous":bool,"options":str[],"resolved":str|null}]
+ambiguous=true when variety or form is unclear.
+Option examples: herb/herbs→["basil","cilantro","dill","thyme","parsley","mint","rosemary"], squash→["butternut squash","acorn squash","zucchini","delicata squash","kabocha squash"], mushrooms→["button mushrooms","cremini mushrooms","portobello mushrooms","oyster mushrooms","shiitake mushrooms"], potato/potatoes→["yellow potatoes","red potatoes","russet potatoes","sweet potatoes"], greens→["spinach","kale","swiss chard","arugula","mixed greens","bok choy"], pepper/peppers→["bell peppers","jalapeños","poblano peppers","mini sweet peppers"], citrus→["lemon","lime","orange","grapefruit"], melon→["cantaloupe","honeydew","watermelon","galia melon"], surprise item/unknown→["seasonal vegetable","seasonal fruit","specialty cheese","specialty grain","prepared item"]
+Non-ambiguous: resolved=name(lowercase), options=[].`}
+    ]}]
+  })});
+  if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d?.error?.message||"API error "+r.status)}
+  const d=await r.json();
+  const txt=d.content?.find(c=>c.type==="text")?.text||"";
+  return JSON.parse(txt.replace(/```json|```/g,"").trim());
+}
+
+async function apiPlanMeals(items,pantry){
+  const boxList=items.filter(it=>it.resolved&&it.resolved!=="__skip__").map(it=>`${it.resolved}${it.quantity?" ("+it.quantity+")":""}`).join(", ");
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),body:JSON.stringify({
+    model:"claude-sonnet-4-20250514",max_tokens:1200,
+    messages:[{role:"user",content:`Box contents: ${boxList}
+Pantry staples: ${pantry.join(", ")}
+Suggest 4 complete practical meals. Include at least 1 genuinely quick option (≤25 min, mostly hands-off).
+For additionalNeeds: list ONLY items not in the box and not in the pantry staples, with specific quantities. Empty array if nothing extra needed.
+Return ONLY a JSON array, no markdown:
+[{"name":str,"description":str,"effort":1-3,"cleanup":1-3,"cookTime":str,"mainIngredients":[str],"additionalNeeds":[str]}]
+effort: 1=≤25min, 2=30-45min active, 3=45min+ or complex. cleanup: 1=one pan, 2=few dishes, 3=full kitchen`}]
+  })});
+  if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d?.error?.message||"API error "+r.status)}
+  const d=await r.json();
+  const txt=d.content?.find(c=>c.type==="text")?.text||"";
+  return JSON.parse(txt.replace(/```json|```/g,"").trim());
+}
+
+async function apiGetRecipe(meal,items){
+  const boxList=items.filter(it=>it.resolved&&it.resolved!=="__skip__").map(it=>it.resolved).join(", ");
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),body:JSON.stringify({
+    model:"claude-sonnet-4-20250514",max_tokens:1200,
+    messages:[{role:"user",content:`Give me a clear, practical step-by-step recipe for: ${meal.name}
+Box ingredients available: ${boxList}
+Description: ${meal.description}
+This is for someone who is a capable cook but finds decision-making overwhelming, so be specific and concrete — no vague instructions like "cook until done". Include timing.
+Return ONLY a JSON object, no markdown:
+{"serves":str,"totalTime":str,"ingredients":[{"amount":str,"item":str}],"steps":[str]}`}]
+  })});
+  if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d?.error?.message||"API error "+r.status)}
+  const d=await r.json();
+  const txt=d.content?.find(c=>c.type==="text")?.text||"";
+  return JSON.parse(txt.replace(/```json|```/g,"").trim());
+}
+
+async function apiAdaptMeals(meals,swaps){
+  const swapStr=swaps.map(s=>`${s.original} → ${s.replacement}`).join(", ");
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:apiHeaders(),body:JSON.stringify({
+    model:"claude-sonnet-4-20250514",max_tokens:1000,
+    messages:[{role:"user",content:`Swaps I'm making: ${swapStr}
+Current meals: ${JSON.stringify(meals.map(m=>({name:m.name,description:m.description,mainIngredients:m.mainIngredients})))}
+Update descriptions and mainIngredients for meals that use swapped ingredients. Unchanged meals stay as-is.
+Return ONLY JSON array (name, description, mainIngredients for all meals). No markdown.`}]
+  })});
+  if(!r.ok)throw new Error("API error "+r.status);
+  const d=await r.json();
+  const txt=d.content?.find(c=>c.type==="text")?.text||"";
+  return JSON.parse(txt.replace(/```json|```/g,"").trim());
+}
+
+// ── Handlers ──
+async function handleFile(file){
+  if(!file?.type?.startsWith("image/"))return;
+  if(!state.apiKey){setState({error:"Add your API key in the Pantry tab first.",stage:"idle"});return}
+  setState({stage:"extracting",error:null});
+  const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=rej;r.readAsDataURL(file)});
+  try{const items=await apiExtract(b64,file.type);setState({items,stage:"disambiguating"})}
+  catch(e){setState({error:"Couldn't read image: "+e.message,stage:"idle"})}
+}
+async function handlePlan(){
+  setState({stage:"planning"});
+  try{const meals=await apiPlanMeals(state.items,state.pantry);setState({meals,grocery:buildGroceryList(meals),stage:"results"})}
+  catch(e){setState({error:"Couldn't generate meals: "+e.message,stage:"disambiguating"})}
+}
+async function handleRecipe(meal){
+  setModal({open:true,meal,recipe:null,loading:true});
+  try{const recipe=await apiGetRecipe(meal,state.items);setModal({recipe,loading:false})}
+  catch(e){setModal({loading:false,recipe:{error:e.message}})}
+}
+async function handleApplySwaps(){
+  setState({updatingMeals:true});
+  const swaps=state.grocery.filter(g=>g.status==="replaced"&&g.replacement).map(g=>({original:g.name,replacement:g.replacement}));
+  try{
+    const updated=await apiAdaptMeals(state.meals,swaps);
+    const meals=state.meals.map(m=>{const u=updated.find(x=>x.name===m.name);return u?{...m,...u}:m});
+    setState({meals,updatingMeals:false});
+  }catch(e){setState({updatingMeals:false})}
+}
+
+// ── Render: Header ──
+function rHeader(){
+  const tabs=["planner","pantry"].map(id=>{
+    const b=el("button",{class:"tab-btn"+(state.tab===id?" active":""),onclick:()=>setState({tab:id})},id.charAt(0).toUpperCase()+id.slice(1));
+    return b;
+  });
+  return el("div",{class:"header"},
+    el("span",{style:{fontWeight:"500",fontSize:"17px",letterSpacing:"-0.01em"}},"Harvest"),
+    el("div",{class:"tabs"},...tabs)
+  );
+}
+
+// ── Render: Spinner ──
+function rSpinner(msg){
+  return el("div",{style:{padding:"4rem 0",textAlign:"center"}},
+    el("div",{style:{width:"28px",height:"28px",border:"2px solid var(--border2)",borderTopColor:"var(--green)",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 14px"}}),
+    el("p",{style:{fontSize:"14px",color:"var(--text2)"}},msg)
+  );
+}
+
+// ── Render: Pantry ──
+function rPantry(){
+  const sorted=[...state.pantry].sort();
+  const chips=sorted.map(item=>{
+    const x=el("button",{style:{background:"none",border:"none",cursor:"pointer",color:"var(--text3)",padding:"0",lineHeight:"1",fontSize:"15px",display:"flex",alignItems:"center"},onclick:()=>{setState({pantry:state.pantry.filter(p=>p!==item)});savePantry()}},"×");
+    return el("div",{class:"chip"},el("span",{},item),x);
+  });
+  let inp;
+  const add=()=>{
+    const v=(inp?.value||"").trim().toLowerCase();
+    if(!v||state.pantry.map(p=>p.toLowerCase()).includes(v))return;
+    setState({pantry:[...state.pantry,v]});savePantry();
+    if(inp)inp.value="";
+  };
+  inp=el("input",{type:"text",placeholder:"Add an ingredient...",style:{flex:"1"},onkeydown:e=>{if(e.key==="Enter"){e.preventDefault();add()}}});
+
+  // API Key section
+  let keyInp;
+  const saveKey=()=>{
+    const v=(keyInp?.value||"").trim();
+    save("harvest-api-key",v);
+    setState({apiKey:v});
+  };
+  keyInp=el("input",{type:"password",placeholder:"sk-ant-...",class:"key-input",value:state.apiKey||""});
+
+  return el("div",{class:"anim"},
+    el("div",{class:"section-head"},
+      el("h1",{},"My pantry"),
+      el("p",{},"The planner uses this to generate your grocery list. "+state.pantry.length+" items stocked.")
+    ),
+    el("div",{style:{display:"flex",gap:"8px",marginBottom:"1.5rem"}},inp,
+      el("button",{class:"btn",onclick:add},"Add")
+    ),
+    el("div",{style:{display:"flex",flexWrap:"wrap",gap:"8px",marginBottom:"12px"}},...chips),
+    el("button",{class:"ghost-btn",onclick:()=>{setState({pantry:[...DEFAULT_PANTRY]});savePantry()}},"Reset to defaults"),
+    el("div",{class:"api-key-section"},
+      el("h3",{},"Anthropic API key"),
+      el("p",{},"Required to use the planner. Get yours at console.anthropic.com — stored locally in your browser, never sent anywhere else."),
+      el("div",{class:"key-row"},keyInp,el("button",{class:"btn",onclick:saveKey},"Save")),
+      el("p",{class:"notice"},"⚠ This key is stored in localStorage and visible to anyone with access to this browser. For shared or public hosting, route API calls through a backend proxy instead.")
+    )
+  );
+}
+
+// ── Render: Idle ──
+function rIdle(){
+  let fileInput=el("input",{type:"file",accept:"image/*",style:{display:"none"},onchange:e=>handleFile(e.target.files?.[0])});
+  const zone=el("div",{class:"upload-zone",
+    onclick:()=>fileInput.click(),
+    ondragover:e=>{e.preventDefault();zone.classList.add("drag")},
+    ondragleave:()=>zone.classList.remove("drag"),
+    ondrop:e=>{e.preventDefault();zone.classList.remove("drag");handleFile(e.dataTransfer.files?.[0])}
+  },
+    el("div",{style:{fontSize:"2rem",marginBottom:"12px",opacity:"0.5"}},"↑"),
+    el("p",{style:{fontSize:"15px",fontWeight:"500",marginBottom:"4px"}},"Upload your box screenshot"),
+    el("p",{style:{fontSize:"13px",color:"var(--text2)"}},"Drop here or click to browse · PNG, JPG, WEBP")
+  );
+  return el("div",{class:"anim"},
+    el("div",{class:"section-head"},
+      el("h1",{},"What's in this week's box?"),
+      el("p",{},"Screenshot the Odd Bunch page and upload it. "+state.pantry.length+" pantry items stocked.")
+    ),
+    zone,fileInput,
+    !state.apiKey?el("p",{style:{marginTop:"10px",fontSize:"13px",color:"var(--warning)"}},"No API key set — add one in the Pantry tab."):null,
+    state.error?el("p",{style:{marginTop:"10px",fontSize:"13px",color:"var(--danger)"}},state.error):null
+  );
+}
+
+// ── Render: Disambiguating ──
+function rDisambiguating(){
+  const canPlan=state.items.some(it=>it.resolved&&it.resolved!=="__skip__");
+
+  const cards=state.items.map((item,i)=>{
+    if(!item.ambiguous){
+      return el("div",{class:"disambiguation-card",style:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}},
+        el("div",{},
+          el("span",{style:{fontSize:"14px",fontWeight:"500"}},item.name),
+          item.quantity?el("span",{style:{fontSize:"12px",color:"var(--text2)",marginLeft:"6px"}},item.quantity):null
+        ),
+        el("span",{class:"pill pill-green"},"confirmed")
+      );
+    }
+    const isSkipped=item.resolved==="__skip__";
+    const chips=item.options.map(opt=>{
+      const sel=item.resolved===opt;
+      return el("button",{
+        class:"option-chip"+(sel?" selected":""),
+        onclick:()=>setState({items:state.items.map((it,j)=>j===i?{...it,resolved:opt}:it)})
+      },opt);
+    });
+    const customInp=el("input",{
+      type:"text",placeholder:"Not listed? Write it in...",
+      value:(item.resolved&&!item.options.includes(item.resolved)&&item.resolved!=="__skip__")?item.resolved:"",
+      style:{marginTop:"8px"},
+      oninput:e=>{const v=e.target.value.trim();setState({items:state.items.map((it,j)=>j===i?{...it,resolved:v||null}:it)},true)},
+      onblur:()=>render()
+    });
+    return el("div",{class:"disambiguation-card",style:{opacity:isSkipped?"0.45":"1",transition:"opacity 0.2s"}},
+      el("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px",flexWrap:"wrap"}},
+        el("span",{style:{fontSize:"14px",fontWeight:"500"}},item.name),
+        item.quantity?el("span",{style:{fontSize:"12px",color:"var(--text2)"}},item.quantity):null,
+        !isSkipped?el("span",{style:{fontSize:"13px",color:"var(--text2)"}},"— which kind?"):null,
+        el("button",{class:"ghost-btn",style:{marginLeft:"auto"},onclick:()=>setState({items:state.items.map((it,j)=>j===i?{...it,resolved:isSkipped?null:"__skip__"}:it)})},isSkipped?"undo skip":"skip")
+      ),
+      !isSkipped?el("div",{style:{display:"flex",flexWrap:"wrap",gap:"8px"}},...chips):null,
+      !isSkipped?customInp:null
+    );
+  });
+
+  return el("div",{class:"anim"},
+    el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.5rem"}},
+      el("div",{class:"section-head",style:{marginBottom:"0"}},
+        el("h1",{},"Confirm your box"),
+        el("p",{},"Pick a variety, write in your own, or skip anything you don't know yet.")
+      ),
+      el("button",{class:"ghost-btn",onclick:()=>setState({stage:"idle",items:[],error:null})},"← back")
+    ),
+    el("div",{style:{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"1.5rem"}},...cards),
+    state.error?el("p",{style:{marginBottom:"10px",fontSize:"13px",color:"var(--danger)"}},state.error):null,
+    el("button",{class:"btn-primary",disabled:!canPlan,onclick:canPlan?handlePlan:null},"Plan my meals →")
+  );
+}
+
+// ── Render: Results ──
+function rResults(){
+  const effortMap={1:{label:"quick",cls:"pill-green"},2:{label:"medium",cls:"pill-amber"},3:{label:"involved",cls:"pill-red"}};
+  const cleanupMap={1:"1 pan",2:"few dishes",3:"full kitchen"};
+
+  const mealCards=state.meals.map(meal=>{
+    const e=effortMap[meal.effort]||effortMap[1];
+    return el("div",{class:"meal-card"},
+      el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px"}},
+        el("p",{style:{fontSize:"15px",fontWeight:"500",lineHeight:"1.3",flex:"1",margin:"0"}},meal.name),
+        el("span",{class:"pill "+e.cls},e.label)
+      ),
+      el("p",{style:{fontSize:"13px",color:"var(--text2)",lineHeight:"1.55",margin:"0"}},meal.description),
+      el("div",{class:"meal-footer"},el("span",{},meal.cookTime),el("span",{},"·"),el("span",{},cleanupMap[meal.cleanup]||"")),
+      (meal.mainIngredients||[]).length?el("div",{style:{display:"flex",flexWrap:"wrap",gap:"4px"}},
+        ...(meal.mainIngredients||[]).map(ing=>el("span",{style:{fontSize:"11px",padding:"2px 8px",background:"var(--bg3)",borderRadius:"100px",color:"var(--text2)"}},ing))
+      ):null,
+      el("button",{class:"btn",style:{fontSize:"12px",marginTop:"auto"},onclick:()=>handleRecipe(meal)},"Get recipe →")
+    );
+  });
+
+  const hasGrocery=state.grocery.length>0;
+  const hasSwaps=state.grocery.some(g=>g.status==="replaced"&&g.replacement);
+  const needCount=state.grocery.filter(g=>g.status==="need").length;
+
+  const groceryRows=state.grocery.map((g,i)=>{
+    const done=g.status==="have"||(g.status==="replaced"&&g.replacement);
+    const cb=el("input",{type:"checkbox",checked:g.status==="have",style:{width:"auto",marginTop:"2px",flexShrink:"0",accentColor:"var(--green)"}});
+    cb.addEventListener("change",()=>{setState({grocery:state.grocery.map((gi,j)=>j===i?{...gi,status:cb.checked?"have":"need",replacement:""}:gi)})});
+    const repInp=el("input",{
+      type:"text",placeholder:"Swap for something else...",
+      value:g.replacement||"",
+      style:{fontSize:"12px",marginTop:"4px"},
+      oninput:e=>{const v=e.target.value;setState({grocery:state.grocery.map((gi,j)=>j===i?{...gi,status:v?"replaced":"need",replacement:v}:gi)},true)},
+      onblur:()=>render()
+    });
+    return el("div",{class:"grocery-row",style:{opacity:done?"0.45":"1",transition:"opacity 0.2s"}},
+      cb,
+      el("div",{style:{flex:"1",minWidth:"0"}},
+        el("div",{style:{display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap"}},
+          el("span",{style:{fontSize:"14px",textDecoration:done?"line-through":"none"}},g.name),
+          el("span",{style:{fontSize:"11px",color:"var(--text3)"}},"("+( g.forMeals.length>1?g.forMeals.length+" meals":g.forMeals[0])+")"),
+          (g.status==="replaced"&&g.replacement)?el("span",{style:{fontSize:"11px",color:"var(--success)"}},"→ "+g.replacement):null
+        ),
+        g.status!=="have"?repInp:null
+      )
+    );
+  });
+
+  return el("div",{class:"anim"},
+    el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.5rem"}},
+      el("div",{class:"section-head",style:{marginBottom:"0"}},
+        el("h1",{},"This week's meals"),
+        el("p",{},"Decisions made. Pick one when you're hungry.")
+      ),
+      el("button",{class:"ghost-btn",onclick:()=>setState({stage:"idle",items:[],meals:[],grocery:[],error:null})},"← new week")
+    ),
+    el("div",{class:"meal-grid"},...mealCards),
+    el("div",{class:"grocery-section"},
+      el("div",{style:{marginBottom:"1rem"}},
+        el("p",{style:{fontSize:"16px",fontWeight:"500",marginBottom:"2px"}},"Shopping list"),
+        el("p",{style:{fontSize:"13px",color:"var(--text2)"}},
+          hasGrocery?`${needCount} item${needCount===1?"":"s"} to pick up — check off what you have or swap for something else.`:"Nothing extra needed — your box and pantry cover all four meals."
+        )
+      ),
+      hasGrocery?el("div",{class:"grocery-list"},...groceryRows):null,
+      hasSwaps?el("button",{
+        class:"btn",style:{marginTop:"12px",width:"100%",padding:"11px",fontSize:"14px",fontWeight:"500",opacity:state.updatingMeals?"0.5":"1"},
+        disabled:state.updatingMeals,onclick:handleApplySwaps
+      },state.updatingMeals?"Updating meals...":"Update meal plans for my swaps →"):null
+    )
+  );
+}
+
+// ── Render: Recipe Modal ──
+function rModal(){
+  if(!state.modal.open)return null;
+  const{meal,recipe,loading}=state.modal;
+  const close=()=>setModal({open:false,meal:null,recipe:null,loading:false});
+
+  let body;
+  if(loading){
+    body=el("div",{style:{padding:"2rem 0",textAlign:"center"}},
+      el("div",{style:{width:"24px",height:"24px",border:"2px solid var(--border2)",borderTopColor:"var(--green)",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 10px"}}),
+      el("p",{style:{fontSize:"14px",color:"var(--text2)"}},"Generating recipe...")
+    );
+  }else if(recipe?.error){
+    body=el("p",{style:{fontSize:"14px",color:"var(--danger)"}},recipe.error);
+  }else if(recipe){
+    const ings=el("div",{style:{marginBottom:"1.25rem"}},
+      el("p",{style:{fontSize:"13px",fontWeight:"500",color:"var(--text2)",marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.06em"}},"Ingredients"),
+      el("div",{style:{display:"flex",flexDirection:"column",gap:"4px"}},
+        ...(recipe.ingredients||[]).map(i=>el("div",{style:{display:"flex",gap:"10px",fontSize:"14px"}},
+          el("span",{style:{color:"var(--text2)",minWidth:"80px",fontSize:"13px"}},i.amount),
+          el("span",{},i.item)
+        ))
+      )
+    );
+    const steps=el("div",{class:"recipe-steps"},
+      el("p",{style:{fontSize:"13px",fontWeight:"500",color:"var(--text2)",marginBottom:"4px",textTransform:"uppercase",letterSpacing:"0.06em"}},"Steps"),
+      ...(recipe.steps||[]).map((s,i)=>el("div",{class:"recipe-step"},
+        el("div",{class:"step-num"},String(i+1)),
+        el("p",{},s)
+      ))
+    );
+    body=el("div",{},ings,steps);
+  }
+
+  const meta=meal?el("div",{style:{display:"flex",gap:"8px",marginBottom:"1.25rem",fontSize:"12px",color:"var(--text2)"}},
+    el("span",{},meal.cookTime),el("span",{},"·"),el("span",{},meal.description)
+  ):null;
+
+  const backdrop=el("div",{class:"modal-backdrop",onclick:e=>{if(e.target===backdrop)close()}},
+    el("div",{class:"modal"},
+      el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}},
+        el("h2",{},meal?.name||"Recipe"),
+        el("button",{class:"ghost-btn",onclick:close},"✕ close")
+      ),
+      meta,
+      el("div",{style:{borderTop:"1px solid var(--border)",paddingTop:"1.25rem"}},body||el("p",{style:{color:"var(--text2)",fontSize:"14px"}},"No recipe available."))
+    )
+  );
+  return backdrop;
+}
+
+// ── Main Render ──
+function render(){
+  const root=document.getElementById("app");
+  root.innerHTML="";
+  const modal=rModal();
+  if(modal)root.append(modal);
+  const wrap=el("div",{});
+  wrap.append(rHeader());
+  const content=el("div",{});
+  if(state.tab==="pantry")content.append(rPantry());
+  else{
+    if(state.stage==="extracting")content.append(rSpinner("Reading your box contents..."));
+    else if(state.stage==="planning")content.append(rSpinner("Planning your week..."));
+    else if(state.stage==="idle")content.append(rIdle());
+    else if(state.stage==="disambiguating")content.append(rDisambiguating());
+    else if(state.stage==="results")content.append(rResults());
+  }
+  wrap.append(content);
+  root.append(wrap);
+}
+
+loadAll();
+render();
+</script>
+</body>
+</html>
